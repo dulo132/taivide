@@ -192,7 +192,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
@@ -371,7 +371,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="admin-layout-main bg-gray-50 min-h-[calc(100vh-4rem)]">
+        <main className="admin-layout-main bg-gray-50">
           <div className="admin-content-wrapper">
             {children}
           </div>
