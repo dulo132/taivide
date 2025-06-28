@@ -52,6 +52,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [isSidebarOpen]);
+
   // Check if current page is a login page (should not require authentication)
   const isLoginPage = pathname === '/admin/login';
 
@@ -193,10 +207,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="bg-gray-50">
-      {/* Mobile sidebar overlay */}
+      {/* Sidebar overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -205,7 +219,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className={`
         fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0
       `}>
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
@@ -222,7 +235,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             variant="ghost"
             size="sm"
             onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -314,7 +327,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-72">
+      <div className="w-full">
         {/* Top header */}
         <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
@@ -323,7 +336,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden"
+                className=""
               >
                 <Menu className="h-5 w-5" />
               </Button>
