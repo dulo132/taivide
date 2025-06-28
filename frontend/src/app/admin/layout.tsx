@@ -164,13 +164,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       badge: null
     },
     {
-      name: 'Dashboard Mới',
-      href: '/admin/new-dashboard',
-      icon: LayoutDashboard,
-      current: pathname === '/admin/new-dashboard',
-      badge: 'New'
-    },
-    {
       name: 'Quản lý người dùng',
       href: '/admin/users',
       icon: Users,
