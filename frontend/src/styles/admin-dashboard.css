@@ -4,6 +4,8 @@
 .admin-layout-main {
   padding: 0;
   margin: 0;
+  /* Remove min-height to allow content-based height */
+  min-height: auto;
 }
 
 .admin-content-wrapper {
