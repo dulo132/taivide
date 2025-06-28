@@ -371,8 +371,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="bg-gray-50 min-h-[calc(100vh-4rem)]">
-          <div className="p-4 sm:p-6 lg:p-8">
+        <main className="admin-layout-main bg-gray-50 min-h-[calc(100vh-4rem)]">
+          <div className="admin-content-wrapper">
             {children}
           </div>
         </main>

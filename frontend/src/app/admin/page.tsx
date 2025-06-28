@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import AdminPageWrapper from '@/components/admin/AdminPageWrapper';
 import {
   Users,
   DollarSign,
@@ -372,7 +373,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <AdminPageWrapper spacing="normal" maxWidth="7xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
@@ -612,6 +613,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </div>
+    </AdminPageWrapper>
   );
 }
