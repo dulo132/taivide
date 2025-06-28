@@ -18,6 +18,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
+  toggleSidebar,
+  handleBodyScrollLock,
+  setupResizeListener,
+  handleNavItemClick
+} from '@/utils/sidebarUtils';
+import {
   LayoutDashboard,
   Users,
   Settings,
@@ -52,30 +58,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Prevent body scroll when sidebar is open on mobile only
+  // Handle sidebar behavior and body scroll lock
   useEffect(() => {
-    const handleResize = () => {
-      // Auto-close sidebar on mobile when resizing to desktop
-      if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(false);
-        document.body.classList.remove('sidebar-open');
-      }
-    };
+    handleBodyScrollLock(isSidebarOpen);
+  }, [isSidebarOpen]);
 
-    // Prevent body scroll only on mobile when sidebar is open
-    if (isSidebarOpen && window.innerWidth < 1024) {
-      document.body.classList.add('sidebar-open');
-    } else {
-      document.body.classList.remove('sidebar-open');
-    }
-
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup on unmount
-    return () => {
-      document.body.classList.remove('sidebar-open');
-      window.removeEventListener('resize', handleResize);
-    };
+  // Setup resize listener
+  useEffect(() => {
+    const cleanup = setupResizeListener(isSidebarOpen, setIsSidebarOpen);
+    return cleanup;
   }, [isSidebarOpen]);
 
   // Check if current page is a login page (should not require authentication)
@@ -218,83 +209,61 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="bg-gray-50">
-      {/* Mobile sidebar overlay - only show on mobile when sidebar is open */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+    <div className="admin-layout">
+      {/* Mobile sidebar overlay */}
+      <div
+        className={`sidebar-overlay ${isSidebarOpen ? 'sidebar-overlay--visible' : ''}`}
+        onClick={() => setIsSidebarOpen(toggleSidebar(isSidebarOpen))}
+      />
 
       {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0
-      `}>
+      <aside className={`sidebar sidebar--mobile ${isSidebarOpen ? 'sidebar--open' : ''} sidebar--desktop`}>
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
+        <header className="sidebar__header">
+          <div className="sidebar__brand">
+            <div className="sidebar__brand-icon">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">Admin Panel</h1>
-              <p className="text-xs text-blue-100">Tải Video Nhanh</p>
+            <div className="sidebar__brand-text">
+              <h1 className="sidebar__brand-title">Admin Panel</h1>
+              <p className="sidebar__brand-subtitle">Tải Video Nhanh</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden text-white hover:bg-white/20"
+          <button
+            className="sidebar__close-btn"
+            onClick={() => setIsSidebarOpen(toggleSidebar(isSidebarOpen))}
+            aria-label="Đóng menu"
           >
             <X className="h-4 w-4" />
-          </Button>
-        </div>
+          </button>
+        </header>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <div className="space-y-1">
+        <nav className="sidebar__nav">
+          <ul className="sidebar__nav-list">
             {navigation.map((item) => {
               const isActive = item.current;
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    group flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200
-                    ${isActive
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                    }
-                  `}
-                  onClick={() => {
-                    // Only close sidebar on mobile/tablet
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-center">
-                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
-                    <span>{item.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''}`}
+                    onClick={() => handleNavItemClick(setIsSidebarOpen)}
+                  >
+                    <div className="sidebar__nav-item-content">
+                      <item.icon className="sidebar__nav-item-icon" />
+                      <span>{item.name}</span>
+                    </div>
                     {item.badge && (
-                      <Badge variant="secondary" className={`text-xs ${isActive ? 'bg-white/20 text-white border-0' : 'bg-blue-100 text-blue-700'}`}>
+                      <span className="sidebar__nav-item-badge">
                         {item.badge}
-                      </Badge>
+                      </span>
                     )}
-                    {isActive && (
-                      <div className="w-2 h-2 bg-white rounded-full" />
-                    )}
-                  </div>
-                </Link>
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           <Separator className="my-6" />
 
@@ -342,22 +311,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
         </nav>
-      </div>
+      </aside>
 
       {/* Main content */}
-      <div className="w-full lg:pl-72">
+      <main className="main-content">
         {/* Top header */}
-        <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-6">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden"
+        <header className="main-header">
+          <div className="main-header__content">
+            <div className="main-header__left">
+              <button
+                className="main-header__menu-btn"
+                onClick={() => setIsSidebarOpen(toggleSidebar(isSidebarOpen))}
+                aria-label="Mở menu"
               >
                 <Menu className="h-5 w-5" />
-              </Button>
+              </button>
 
               {/* Breadcrumbs */}
               <nav className="hidden lg:flex items-center space-x-2 text-sm">
@@ -407,7 +375,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {children}
           </div>
         </main>
-      </div>
+      </main>
     </div>
   );
 }
