@@ -44,6 +44,19 @@ A comprehensive video downloading and streaming service built with modern techno
 - **Monitoring**: Prometheus + Grafana
 - **Deployment**: Docker Compose for production
 
+## 📚 Documentation
+
+### 📖 **Complete Guides**
+- **[Deployment Guide](docs/DEPLOYMENT-GUIDE.md)** - Complete deployment instructions for EasyPanel
+- **[Build Optimization](docs/BUILD-OPTIMIZATION.md)** - Docker build optimization guide
+- **[Admin Management](docs/ADMIN-MANAGEMENT-GUIDE.md)** - Complete admin system guide
+- **[Cookie Management](docs/COOKIE-MANAGEMENT-GUIDE.md)** - Cookie authentication guide
+- **[Project Completion Report](docs/PROJECT-COMPLETION-REPORT.md)** - Final implementation report
+- **[Testing Summary](docs/TESTING-SUMMARY.md)** - Complete testing results
+
+### 🏗️ **Architecture Documentation**
+- **[Streaming Architecture](docs/PHASE-1.2-STREAMING-ARCHITECTURE.md)** - Advanced streaming implementation
+
 ## 🚀 Quick Start
 
 ### Prerequisites
