@@ -52,17 +52,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Prevent body scroll when sidebar is open
+  // Prevent body scroll when sidebar is open on mobile only
   useEffect(() => {
-    if (isSidebarOpen) {
+    const handleResize = () => {
+      // Auto-close sidebar on mobile when resizing to desktop
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(false);
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+
+    // Prevent body scroll only on mobile when sidebar is open
+    if (isSidebarOpen && window.innerWidth < 1024) {
       document.body.classList.add('sidebar-open');
     } else {
       document.body.classList.remove('sidebar-open');
     }
 
+    window.addEventListener('resize', handleResize);
+
     // Cleanup on unmount
     return () => {
       document.body.classList.remove('sidebar-open');
+      window.removeEventListener('resize', handleResize);
     };
   }, [isSidebarOpen]);
 
@@ -207,10 +219,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="bg-gray-50">
-      {/* Sidebar overlay */}
+      {/* Mobile sidebar overlay - only show on mobile when sidebar is open */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -219,6 +231,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className={`
         fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:inset-0
       `}>
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
@@ -235,7 +248,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             variant="ghost"
             size="sm"
             onClick={() => setIsSidebarOpen(false)}
-            className="text-white hover:bg-white/20"
+            className="lg:hidden text-white hover:bg-white/20"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -257,7 +270,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                     }
                   `}
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={() => {
+                    // Only close sidebar on mobile/tablet
+                    if (window.innerWidth < 1024) {
+                      setIsSidebarOpen(false);
+                    }
+                  }}
                 >
                   <div className="flex items-center">
                     <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
@@ -327,7 +345,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="w-full">
+      <div className="w-full lg:pl-72">
         {/* Top header */}
         <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
@@ -336,7 +354,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsSidebarOpen(true)}
-                className=""
+                className="lg:hidden"
               >
                 <Menu className="h-5 w-5" />
               </Button>
