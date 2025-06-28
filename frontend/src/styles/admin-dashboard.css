@@ -28,6 +28,29 @@
   padding-top: 0;
 }
 
+/* AdminPageWrapper spacing optimization */
+.admin-page-wrapper {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Ensure consistent spacing for all admin pages */
+.admin-page-wrapper > * + * {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .admin-page-wrapper > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-page-wrapper > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
 /* Smooth animations for all interactive elements */
 .dashboard-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
