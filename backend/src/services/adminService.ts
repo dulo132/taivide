@@ -27,10 +27,11 @@ class AdminService {
    * Get admin dashboard statistics
    */
   async getDashboardStats(): Promise<AdminStats> {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
 
     const [
       totalUsers,
@@ -121,15 +122,19 @@ class AdminService {
       ? (((revenueToday || 0) - (revenueYesterday || 0)) / (revenueYesterday || 0)) * 100 
       : (revenueToday || 0) > 0 ? 100 : 0;
 
-    return {
-      totalUsers,
-      activeSubscriptions,
-      totalRevenue: Number(totalRevenue) || 0,
-      newUsersToday,
-      revenueToday: Number(revenueToday) || 0,
-      userGrowth: Math.round(userGrowth * 100) / 100,
-      revenueGrowth: Math.round(revenueGrowth * 100) / 100,
-    };
+      return {
+        totalUsers,
+        activeSubscriptions,
+        totalRevenue: Number(totalRevenue) || 0,
+        newUsersToday,
+        revenueToday: Number(revenueToday) || 0,
+        userGrowth: Math.round(userGrowth * 100) / 100,
+        revenueGrowth: Math.round(revenueGrowth * 100) / 100,
+      };
+    } catch (error) {
+      console.error('Error in AdminService.getDashboardStats:', error);
+      throw new Error(`Failed to fetch dashboard statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -141,57 +146,62 @@ class AdminService {
     search?: string,
     subscriptionTier?: string
   ): Promise<UserManagementData> {
-    const offset = (page - 1) * limit;
-    
-    const whereClause: any = {};
-    
-    if (search) {
-      whereClause.email = {
-        [Op.iLike]: `%${search}%`,
-      };
-    }
-    
-    if (subscriptionTier) {
-      whereClause.subscription_tier = subscriptionTier;
-    }
+    try {
+      const offset = (page - 1) * limit;
 
-    const { count, rows } = await User.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: UserSubscription,
-          as: 'subscriptions',
-          include: [
-            {
-              model: SubscriptionPlan,
-              as: 'plan',
+      const whereClause: any = {};
+
+      if (search) {
+        whereClause.email = {
+          [Op.iLike]: `%${search}%`,
+        };
+      }
+
+      if (subscriptionTier) {
+        whereClause.subscription_tier = subscriptionTier;
+      }
+
+      const { count, rows } = await User.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: UserSubscription,
+            as: 'subscriptions',
+            include: [
+              {
+                model: SubscriptionPlan,
+                as: 'plan',
+              },
+            ],
+            where: {
+              status: 'active',
+              starts_at: { [Op.lte]: new Date() },
+              expires_at: { [Op.gt]: new Date() },
             },
-          ],
-          where: {
-            status: 'active',
-            starts_at: { [Op.lte]: new Date() },
-            expires_at: { [Op.gt]: new Date() },
+            required: false,
           },
-          required: false,
-        },
-      ],
-      limit,
-      offset,
-      order: [['created_at', 'DESC']],
-    });
-
-    return {
-      users: rows.map(user => ({
-        ...user.toJSON(),
-        activeSubscription: (user as any).subscriptions?.[0] || null,
-      })),
-      totalCount: count,
-      pagination: {
-        page,
+        ],
         limit,
-        totalPages: Math.ceil(count / limit),
-      },
-    };
+        offset,
+        order: [['created_at', 'DESC']],
+      });
+
+      return {
+        users: rows.map(user => ({
+          ...user.toJSON(),
+          activeSubscription: (user as any).subscriptions?.[0] || null,
+        })),
+        totalCount: count,
+        pagination: {
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error in AdminService.getUsers:', error);
+      throw new Error(`Failed to fetch users: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**

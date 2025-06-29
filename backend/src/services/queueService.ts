@@ -43,29 +43,53 @@ const queueConfig = {
 };
 
 class QueueService {
-  // Queue instances
-  public static videoAnalysisQueue = new Queue('video-analysis', queueConfig);
-  public static streamingQueue = new Queue('video-streaming', {
-    ...queueConfig,
-    defaultJobOptions: {
-      ...queueConfig.defaultJobOptions,
-      attempts: 1, // Streaming jobs should not retry
-      removeOnComplete: 5,
-    },
-  });
+  // Queue instances (initialized conditionally)
+  public static videoAnalysisQueue: Queue | null = null;
+  public static streamingQueue: Queue | null = null;
 
-  // Queue events
-  public static videoAnalysisEvents = new QueueEvents('video-analysis', { connection: redis });
-  public static streamingEvents = new QueueEvents('video-streaming', { connection: redis });
+  // Queue events (initialized conditionally)
+  public static videoAnalysisEvents: QueueEvents | null = null;
+  public static streamingEvents: QueueEvents | null = null;
 
   // Workers
   private static videoAnalysisWorker: Worker | null = null;
   private static streamingWorker: Worker | null = null;
 
   /**
+   * Initialize queue instances
+   */
+  private static initializeQueues(): void {
+    if (process.env.REDIS_ENABLED === 'false') {
+      return;
+    }
+
+    this.videoAnalysisQueue = new Queue('video-analysis', queueConfig);
+    this.streamingQueue = new Queue('video-streaming', {
+      ...queueConfig,
+      defaultJobOptions: {
+        ...queueConfig.defaultJobOptions,
+        attempts: 1, // Streaming jobs should not retry
+        removeOnComplete: 5,
+      },
+    });
+
+    this.videoAnalysisEvents = new QueueEvents('video-analysis', { connection: redis });
+    this.streamingEvents = new QueueEvents('video-streaming', { connection: redis });
+  }
+
+  /**
    * Initialize all workers
    */
   public static async initializeWorkers(): Promise<void> {
+    // Check if Redis is enabled
+    if (process.env.REDIS_ENABLED === 'false') {
+      console.log('Queue workers disabled (Redis not enabled)');
+      return;
+    }
+
+    // Initialize queue instances first
+    this.initializeQueues();
+
     // Video analysis worker
     this.videoAnalysisWorker = new Worker(
       'video-analysis',
@@ -299,7 +323,14 @@ class QueueService {
   /**
    * Add video analysis job
    */
-  public static async addVideoAnalysisJob(data: VideoAnalysisJobData): Promise<Job<VideoAnalysisJobData>> {
+  public static async addVideoAnalysisJob(data: VideoAnalysisJobData): Promise<Job<VideoAnalysisJobData> | null> {
+    if (process.env.REDIS_ENABLED === 'false' || !this.videoAnalysisQueue) {
+      console.log('Queue disabled - processing video analysis synchronously');
+      // Process immediately without queue
+      await this.processVideoAnalysis({ data } as Job<VideoAnalysisJobData>);
+      return null;
+    }
+
     return this.videoAnalysisQueue.add('analyze-video', data, {
       priority: 1,
       delay: 0,
@@ -310,7 +341,14 @@ class QueueService {
   /**
    * Add streaming job
    */
-  public static async addStreamingJob(data: StreamingJobData): Promise<Job<StreamingJobData>> {
+  public static async addStreamingJob(data: StreamingJobData): Promise<Job<StreamingJobData> | null> {
+    if (process.env.REDIS_ENABLED === 'false' || !this.streamingQueue) {
+      console.log('Queue disabled - processing streaming synchronously');
+      // Process immediately without queue
+      await this.processStreaming({ data } as Job<StreamingJobData>);
+      return null;
+    }
+
     return this.streamingQueue.add('stream-video', data, {
       priority: 2, // Higher priority than analysis
       delay: 0,
@@ -322,7 +360,13 @@ class QueueService {
    * Get job status
    */
   public static async getJobStatus(queueName: string, jobId: string): Promise<any> {
+    if (process.env.REDIS_ENABLED === 'false') {
+      return null;
+    }
+
     const queue = queueName === 'video-analysis' ? this.videoAnalysisQueue : this.streamingQueue;
+    if (!queue) return null;
+
     const job = await queue.getJob(jobId);
     
     if (!job) {
@@ -349,6 +393,13 @@ class QueueService {
     videoAnalysis: any;
     streaming: any;
   }> {
+    if (process.env.REDIS_ENABLED === 'false' || !this.videoAnalysisQueue || !this.streamingQueue) {
+      return {
+        videoAnalysis: { waiting: 0, active: 0, completed: 0, failed: 0 },
+        streaming: { waiting: 0, active: 0, completed: 0, failed: 0 }
+      };
+    }
+
     const [videoAnalysisStats, streamingStats] = await Promise.all([
       this.videoAnalysisQueue.getJobCounts(),
       this.streamingQueue.getJobCounts(),
@@ -364,6 +415,10 @@ class QueueService {
    * Setup event listeners for monitoring
    */
   private static setupEventListeners(): void {
+    if (!this.videoAnalysisEvents || !this.streamingEvents) {
+      return;
+    }
+
     // Video analysis events
     this.videoAnalysisEvents.on('completed', (jobId, result) => {
       console.log(`Video analysis job ${jobId} completed:`, result);
@@ -395,13 +450,20 @@ class QueueService {
    * Clean up old jobs
    */
   public static async cleanupJobs(): Promise<void> {
+    if (process.env.REDIS_ENABLED === 'false') {
+      console.log('Queue cleanup skipped (Redis not enabled)');
+      return;
+    }
+
     try {
-      await Promise.all([
-        this.videoAnalysisQueue.clean(24 * 60 * 60 * 1000, 100, 'completed'), // Clean completed jobs older than 24h
-        this.videoAnalysisQueue.clean(7 * 24 * 60 * 60 * 1000, 100, 'failed'), // Clean failed jobs older than 7 days
-        this.streamingQueue.clean(1 * 60 * 60 * 1000, 50, 'completed'), // Clean completed streaming jobs older than 1h
-        this.streamingQueue.clean(24 * 60 * 60 * 1000, 100, 'failed'), // Clean failed streaming jobs older than 24h
-      ]);
+      if (this.videoAnalysisQueue && this.streamingQueue) {
+        await Promise.all([
+          this.videoAnalysisQueue.clean(24 * 60 * 60 * 1000, 100, 'completed'), // Clean completed jobs older than 24h
+          this.videoAnalysisQueue.clean(7 * 24 * 60 * 60 * 1000, 100, 'failed'), // Clean failed jobs older than 7 days
+          this.streamingQueue.clean(1 * 60 * 60 * 1000, 50, 'completed'), // Clean completed streaming jobs older than 1h
+          this.streamingQueue.clean(24 * 60 * 60 * 1000, 100, 'failed'), // Clean failed streaming jobs older than 24h
+        ]);
+      }
       console.log('Queue cleanup completed');
     } catch (error) {
       console.error('Queue cleanup failed:', error);
@@ -412,14 +474,19 @@ class QueueService {
    * Graceful shutdown
    */
   public static async shutdown(): Promise<void> {
+    if (process.env.REDIS_ENABLED === 'false') {
+      console.log('Queue shutdown skipped (Redis not enabled)');
+      return;
+    }
+
     try {
       await Promise.all([
         this.videoAnalysisWorker?.close(),
         this.streamingWorker?.close(),
-        this.videoAnalysisQueue.close(),
-        this.streamingQueue.close(),
-        this.videoAnalysisEvents.close(),
-        this.streamingEvents.close(),
+        this.videoAnalysisQueue?.close(),
+        this.streamingQueue?.close(),
+        this.videoAnalysisEvents?.close(),
+        this.streamingEvents?.close(),
       ]);
       console.log('Queue service shutdown completed');
     } catch (error) {

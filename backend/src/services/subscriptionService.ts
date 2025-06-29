@@ -20,12 +20,17 @@ class SubscriptionService {
    * Get all available subscription plans
    */
   async getAvailablePlans(): Promise<SubscriptionPlan[]> {
-    return await SubscriptionPlan.findAll({
-      where: {
-        is_active: true,
-      },
-      order: [['billing_cycle', 'ASC'], ['price', 'ASC']],
-    });
+    try {
+      return await SubscriptionPlan.findAll({
+        where: {
+          is_active: true,
+        },
+        order: [['billing_cycle', 'ASC'], ['price', 'ASC']],
+      });
+    } catch (error) {
+      console.error('Error in SubscriptionService.getAvailablePlans:', error);
+      throw new Error(`Failed to fetch subscription plans: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -35,12 +40,17 @@ class SubscriptionService {
     monthly: SubscriptionPlan[];
     annual: SubscriptionPlan[];
   }> {
-    const plans = await this.getAvailablePlans();
+    try {
+      const plans = await this.getAvailablePlans();
 
-    return {
-      monthly: plans.filter(plan => plan.billing_cycle === 'monthly'),
-      annual: plans.filter(plan => plan.billing_cycle === 'annual'),
-    };
+      return {
+        monthly: plans.filter(plan => plan.billing_cycle === 'monthly'),
+        annual: plans.filter(plan => plan.billing_cycle === 'annual'),
+      };
+    } catch (error) {
+      console.error('Error in SubscriptionService.getPlansGroupedByBilling:', error);
+      throw new Error(`Failed to group subscription plans: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
