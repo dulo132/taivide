@@ -80,6 +80,58 @@ router.get('/',
 );
 
 /**
+ * GET /api/admin/users/stats
+ * Get user statistics
+ */
+router.get('/stats',
+  authenticateAdmin,
+  requireAdminPermission('analytics_view'),
+  async (req: Request, res: Response) => {
+    try {
+      const stats = await UserService.getUserStats();
+
+      res.json({
+        message: 'User statistics retrieved successfully',
+        stats
+      });
+    } catch (error) {
+      console.error('Get user stats error:', error);
+      res.status(500).json({
+        error: 'Failed to get user statistics',
+        code: 'USER_STATS_FAILED',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/users/stats/overview
+ * Get user statistics overview (alternative endpoint)
+ */
+router.get('/stats/overview',
+  authenticateAdmin,
+  requireAdminPermission('analytics_view'),
+  async (req: Request, res: Response) => {
+    try {
+      const stats = await UserService.getUserStats();
+
+      res.json({
+        message: 'User statistics retrieved successfully',
+        stats
+      });
+    } catch (error) {
+      console.error('Get user stats error:', error);
+      res.status(500).json({
+        error: 'Failed to get user statistics',
+        code: 'USER_STATS_FAILED',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/admin/users/:userId
  * Get user details
  */
@@ -202,30 +254,7 @@ router.put('/:userId/status',
   }
 );
 
-/**
- * GET /api/admin/users/stats
- * Get user statistics
- */
-router.get('/stats/overview',
-  authenticateAdmin,
-  requireAdminPermission('analytics_view'),
-  async (req: Request, res: Response) => {
-    try {
-      const stats = await UserService.getUserStats();
 
-      res.json({
-        message: 'User statistics retrieved successfully',
-        stats
-      });
-    } catch (error) {
-      console.error('Get user stats error:', error);
-      res.status(500).json({
-        error: 'Failed to get user statistics',
-        code: 'USER_STATS_FAILED'
-      });
-    }
-  }
-);
 
 /**
  * POST /api/admin/users/:userId/reset-password

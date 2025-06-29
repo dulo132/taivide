@@ -116,7 +116,8 @@ router.get('/plans', async (req: Request, res: Response) => {
     console.error('Error fetching subscription plans:', error);
     res.status(500).json({
       error: 'Failed to fetch subscription plans',
-      code: 'PLANS_FETCH_FAILED'
+      code: 'PLANS_FETCH_FAILED',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

@@ -93,10 +93,14 @@ const startServer = async () => {
     console.log('✅ Database connection has been established successfully.');
     await sequelize.sync(); // Sync all models
 
-    // Initialize queue workers
-    console.log('📦 Initializing queue workers...');
-    await QueueService.initializeWorkers();
-    console.log('✅ Queue workers initialized successfully.');
+    // Initialize queue workers (only if Redis is enabled)
+    if (process.env.REDIS_ENABLED !== 'false') {
+      console.log('📦 Initializing queue workers...');
+      await QueueService.initializeWorkers();
+      console.log('✅ Queue workers initialized successfully.');
+    } else {
+      console.log('📦 Queue workers disabled (Redis not enabled)');
+    }
 
     // Initialize default subscription plans
     console.log('💳 Initializing subscription plans...');
@@ -118,16 +122,20 @@ const startServer = async () => {
     await CookieService.initializeDirectories();
     console.log('✅ Cookie directories initialized.');
 
-    // Start performance monitoring
-    setInterval(async () => {
-      await PerformanceService.storeMetrics();
-    }, 60000); // Store metrics every minute
+    // Start performance monitoring (only if Redis is enabled)
+    if (process.env.REDIS_ENABLED !== 'false') {
+      setInterval(async () => {
+        await PerformanceService.storeMetrics();
+      }, 60000); // Store metrics every minute
 
-    // Cleanup old data periodically
-    setInterval(async () => {
-      await PerformanceService.cleanupOldMetrics();
-      await QueueService.cleanupJobs();
-    }, 60 * 60 * 1000); // Cleanup every hour
+      // Cleanup old data periodically
+      setInterval(async () => {
+        await PerformanceService.cleanupOldMetrics();
+        await QueueService.cleanupJobs();
+      }, 60 * 60 * 1000); // Cleanup every hour
+    } else {
+      console.log('📊 Performance monitoring disabled (Redis not enabled)');
+    }
 
     app.listen(port, () => {
       console.log('🎉 Server startup completed successfully!');
@@ -160,13 +168,15 @@ const gracefulShutdown = async (signal: string) => {
       process.exit(1);
     }, 30000); // 30 seconds timeout
 
-    // Close queue workers and connections
-    console.log('📦 Shutting down queue workers...');
-    await QueueService.shutdown();
+    // Close queue workers and connections (only if Redis is enabled)
+    if (process.env.REDIS_ENABLED !== 'false') {
+      console.log('📦 Shutting down queue workers...');
+      await QueueService.shutdown();
 
-    // Close Redis connections
-    console.log('🔴 Closing Redis connections...');
-    await closeRedisConnections();
+      // Close Redis connections
+      console.log('🔴 Closing Redis connections...');
+      await closeRedisConnections();
+    }
 
     // Close database connection
     console.log('🗄️  Closing database connection...');

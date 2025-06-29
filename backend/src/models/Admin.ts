@@ -85,7 +85,7 @@ Admin.init(
       defaultValue: 'moderator',
     },
     permissions: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
     },

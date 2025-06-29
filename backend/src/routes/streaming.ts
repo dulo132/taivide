@@ -72,7 +72,7 @@ router.post('/analyze',
       res.json({
         message: 'Video analysis started',
         requestId,
-        jobId: job.id,
+        jobId: job?.id || 'sync-processing',
         estimatedTime: '10-30 seconds',
       });
     } catch (error) {
