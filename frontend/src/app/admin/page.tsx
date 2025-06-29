@@ -190,14 +190,15 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [generateActivitiesFromAnalytics]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await fetchDashboardData();
       toast.success('Dữ liệu đã được cập nhật');
-    } catch (error) {
+    } catch (refreshError) {
+      console.error('Refresh error:', refreshError);
       toast.error('Không thể cập nhật dữ liệu');
     } finally {
       setIsRefreshing(false);
@@ -205,7 +206,12 @@ export default function AdminDashboard() {
   }, [fetchDashboardData]);
 
   // Helper function to generate services from status API
-  const generateServicesFromStatus = (status: any): SystemService[] => {
+  const generateServicesFromStatus = (status: {
+    systemHealthy: boolean;
+    hasVnAdmin: boolean;
+    hasComAdmin: boolean;
+    timestamp?: string;
+  }): SystemService[] => {
     const services: SystemService[] = [
       {
         name: 'API Server',
@@ -237,7 +243,10 @@ export default function AdminDashboard() {
   };
 
   // Helper function to generate resources from metrics API
-  const generateResourcesFromMetrics = (metricsData: any): SystemResource[] => {
+  const generateResourcesFromMetrics = (metricsData: {
+    memory?: { used: number; total: number };
+    current?: { activeStreams: number };
+  }): SystemResource[] => {
     const resources: SystemResource[] = [];
 
     if (metricsData.memory) {
@@ -288,7 +297,18 @@ export default function AdminDashboard() {
   };
 
   // Helper function to generate activities from analytics data
-  const generateActivitiesFromAnalytics = (analyticsData: any): ActivityItem[] => {
+  const generateActivitiesFromAnalytics = useCallback((analyticsData: {
+    userMetrics?: {
+      newUsersToday: number;
+      totalUsers: number;
+    };
+    subscriptionMetrics?: {
+      activeSubscriptions: number;
+    };
+    usageMetrics?: {
+      streamsToday: number;
+    };
+  }): ActivityItem[] => {
     const activities: ActivityItem[] = [];
 
     if (analyticsData?.userMetrics) {
@@ -358,7 +378,7 @@ export default function AdminDashboard() {
     }
 
     return activities.slice(0, 8); // Limit to 8 activities
-  };
+  }, []);
 
 
 
