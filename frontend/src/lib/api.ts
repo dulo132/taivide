@@ -39,6 +39,54 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}): Prom
 
 // Specific API functions for common endpoints
 export const api = {
+  // Admin APIs
+  admin: {
+    getDashboardStats: (token: string) => apiCall('/admin/dashboard/stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    getStatus: (token: string) => apiCall('/admin/status', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    getUsers: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+
+      const endpoint = `/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return apiCall(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    },
+    verify: (token: string) => apiCall('/admin/verify', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    login: (email: string, password: string) => apiCall('/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    })
+  },
+
+  // Monitoring APIs
+  monitoring: {
+    getMetrics: (token: string) => apiCall('/monitoring/metrics', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    getHealth: (token: string) => apiCall('/monitoring/health', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  },
+
+  // Analytics APIs
+  analytics: {
+    getOverview: (token: string) => apiCall('/analytics/overview', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    getUserBehavior: (token: string) => apiCall('/analytics/user-behavior', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  },
+
   // Subscription APIs
   subscription: {
     getPlans: () => apiCall('/subscription/plans'),
@@ -48,13 +96,13 @@ export const api = {
     getPayments: (token: string) => apiCall('/subscription/payments', {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    createPaymentIntent: (planId: string, paymentMethod: string, token: string) => 
+    createPaymentIntent: (planId: string, paymentMethod: string, token: string) =>
       apiCall('/subscription/payment-intent', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ planId, paymentMethod })
       }),
-    createTestPayment: (planId: string, token: string) => 
+    createTestPayment: (planId: string, token: string) =>
       apiCall('/subscription/test-payment', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
