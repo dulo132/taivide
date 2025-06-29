@@ -90,6 +90,90 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Helper function to generate activities from analytics data
+  const generateActivitiesFromAnalytics = useCallback((analyticsData: {
+    userMetrics?: {
+      newUsersToday: number;
+      totalUsers: number;
+    };
+    subscriptionMetrics?: {
+      activeSubscriptions: number;
+    };
+    usageMetrics?: {
+      streamsToday: number;
+    };
+  }): ActivityItem[] => {
+    const activities: ActivityItem[] = [];
+
+    if (analyticsData?.userMetrics) {
+      const userMetrics = analyticsData.userMetrics;
+
+      if (userMetrics.newUsersToday > 0) {
+        activities.push({
+          id: 'new-users-today',
+          type: 'user_register',
+          title: `${userMetrics.newUsersToday} người dùng mới đăng ký`,
+          description: 'Hôm nay',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (userMetrics.totalUsers > 0) {
+        activities.push({
+          id: 'total-users',
+          type: 'success',
+          title: 'Hệ thống đang phục vụ',
+          description: `${userMetrics.totalUsers} người dùng tổng cộng`,
+          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        });
+      }
+    }
+
+    if (analyticsData?.subscriptionMetrics) {
+      const subMetrics = analyticsData.subscriptionMetrics;
+
+      if (subMetrics.activeSubscriptions > 0) {
+        activities.push({
+          id: 'active-subs',
+          type: 'payment',
+          title: 'Gói đăng ký đang hoạt động',
+          description: `${subMetrics.activeSubscriptions} gói premium`,
+          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        });
+      }
+    }
+
+    if (analyticsData?.usageMetrics) {
+      const usageMetrics = analyticsData.usageMetrics;
+
+      if (usageMetrics.streamsToday > 0) {
+        activities.push({
+          id: 'streams-today',
+          type: 'download',
+          title: `${usageMetrics.streamsToday} video được xử lý`,
+          description: 'Hôm nay',
+          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        });
+      }
+    }
+
+    // Add system health activity
+    activities.push({
+      id: 'system-health',
+      type: 'system',
+      title: 'Hệ thống đang hoạt động bình thường',
+      description: 'Tất cả dịch vụ online',
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    });
+
+    // If no real activities, fallback to mock data
+    if (activities.length === 0) {
+      return generateMockActivities();
+    }
+
+    return activities.slice(0, 8); // Limit to 8 activities
+  }, []);
+
   const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -296,89 +380,7 @@ export default function AdminDashboard() {
     return resources;
   };
 
-  // Helper function to generate activities from analytics data
-  const generateActivitiesFromAnalytics = useCallback((analyticsData: {
-    userMetrics?: {
-      newUsersToday: number;
-      totalUsers: number;
-    };
-    subscriptionMetrics?: {
-      activeSubscriptions: number;
-    };
-    usageMetrics?: {
-      streamsToday: number;
-    };
-  }): ActivityItem[] => {
-    const activities: ActivityItem[] = [];
 
-    if (analyticsData?.userMetrics) {
-      const userMetrics = analyticsData.userMetrics;
-
-      if (userMetrics.newUsersToday > 0) {
-        activities.push({
-          id: 'new-users-today',
-          type: 'user_register',
-          title: `${userMetrics.newUsersToday} người dùng mới đăng ký`,
-          description: 'Hôm nay',
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      if (userMetrics.totalUsers > 0) {
-        activities.push({
-          id: 'total-users',
-          type: 'success',
-          title: 'Hệ thống đang phục vụ',
-          description: `${userMetrics.totalUsers} người dùng tổng cộng`,
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        });
-      }
-    }
-
-    if (analyticsData?.subscriptionMetrics) {
-      const subMetrics = analyticsData.subscriptionMetrics;
-
-      if (subMetrics.activeSubscriptions > 0) {
-        activities.push({
-          id: 'active-subs',
-          type: 'payment',
-          title: 'Gói đăng ký đang hoạt động',
-          description: `${subMetrics.activeSubscriptions} gói premium`,
-          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        });
-      }
-    }
-
-    if (analyticsData?.usageMetrics) {
-      const usageMetrics = analyticsData.usageMetrics;
-
-      if (usageMetrics.streamsToday > 0) {
-        activities.push({
-          id: 'streams-today',
-          type: 'download',
-          title: `${usageMetrics.streamsToday} video được xử lý`,
-          description: 'Hôm nay',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        });
-      }
-    }
-
-    // Add system health activity
-    activities.push({
-      id: 'system-health',
-      type: 'system',
-      title: 'Hệ thống đang hoạt động bình thường',
-      description: 'Tất cả dịch vụ online',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    });
-
-    // If no real activities, fallback to mock data
-    if (activities.length === 0) {
-      return generateMockActivities();
-    }
-
-    return activities.slice(0, 8); // Limit to 8 activities
-  }, []);
 
 
 
