@@ -5,6 +5,7 @@
 /* Base Layout Structure */
 .admin-layout {
   display: flex;
+  flex-direction: column; /* Stack vertically on mobile */
   min-height: 100vh;
   background-color: #f9fafb;
 }
@@ -173,6 +174,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevent flex item from overflowing */
+  width: 100%; /* Full width on mobile */
 }
 
 .main-content--with-sidebar {
@@ -250,7 +252,11 @@
    RESPONSIVE BEHAVIOR - MOBILE FIRST APPROACH
    ========================================================================== */
 
-/* Mobile Styles (Default) */
+/* Mobile Styles (Default) - Hide sidebar by default on mobile */
+.sidebar--desktop {
+  display: none;
+}
+
 .sidebar__close-btn {
   display: block;
 }
@@ -272,6 +278,12 @@ body.sidebar-open {
   /* Layout adjustments for desktop */
   .admin-layout {
     flex-direction: row;
+  }
+
+  /* Show sidebar on desktop */
+  .sidebar--desktop {
+    display: flex;
+    flex-direction: column;
   }
 
   /* Sidebar always visible on desktop */
@@ -319,7 +331,7 @@ body.sidebar-open {
 }
 
 .admin-content-wrapper {
-  padding: 1rem;
+  padding: 0.75rem; /* Smaller padding on mobile */
   width: 100%;
   max-width: 100%;
 }
